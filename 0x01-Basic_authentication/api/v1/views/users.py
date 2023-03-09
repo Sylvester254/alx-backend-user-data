@@ -39,7 +39,7 @@ def delete_user(user_id: str = None) -> str:
     Path parameter:
       - User ID
     Return:
-      - empty JSON is the User has been correctly deleted
+      - empty JSON if the User has been correctly deleted
       - 404 if the User ID doesn't exist
     """
     if user_id is None:
