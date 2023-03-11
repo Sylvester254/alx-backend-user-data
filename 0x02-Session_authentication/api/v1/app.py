@@ -59,7 +59,7 @@ def before_request() -> str:
     """
     if auth is None:
         return
-    
+
     setattr(request, "current_user", auth.current_user(request))
     excluded_paths = ['/api/v1/status/',
                       '/api/v1/unauthorized/',
@@ -67,11 +67,12 @@ def before_request() -> str:
                       '/api/v1/auth_session/login/']
 
     if auth.require_auth(request.path, excluded_paths):
-            cookie = auth.session_cookie(request)
-            if auth.authorization_header(request) is None and cookie is None:
-                abort(401, description="Unauthorized")
-            if auth.current_user(request) is None:
-                abort(403, description="Forbidden")
+        cookie = auth.session_cookie(request)
+        if auth.authorization_header(request) is None and cookie is None:
+            abort(401, description="Unauthorized")
+        if auth.current_user(request) is None:
+            abort(403, description="Forbidden")
+
 
 if __name__ == "__main__":
     host = getenv("API_HOST", "0.0.0.0")
