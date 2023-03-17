@@ -5,9 +5,10 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.session import Session
-from user import Base, User
-from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.exc import InvalidRequestError
+from sqlalchemy.orm.exc import NoResultFound
+
+from user import Base, User
 
 
 class DB:
@@ -17,7 +18,7 @@ class DB:
     def __init__(self) -> None:
         """Initialize a new DB instance
         """
-        self._engine = create_engine("sqlite:///a.db", echo=True)
+        self._engine = create_engine("sqlite:///a.db", echo=False)
         Base.metadata.drop_all(self._engine)
         Base.metadata.create_all(self._engine)
         self.__session = None
@@ -43,7 +44,9 @@ class DB:
         user = User(email=email, hashed_password=hashed_password)
         self._session.add(user)
         self._session.commit()
+
         return user
+
 
     def find_user_by(self, **kwargs) -> User:
         """
@@ -53,10 +56,16 @@ class DB:
         Returns:
             User: The found user
         """
-        user = self._session.query(User).filter_by(**kwargs).first()
-        if not user:
-            raise NoResultFound("No user found")
-        return user
+        if kwargs is None:
+            raise InvalidRequestError
+        for k in kwargs.keys():
+            if k not in User.__table__.columns.keys():
+                raise InvalidRequestError
+        query = self._session.query(User).filter_by(**kwargs).first()
+        if query is None:
+            raise NoResultFound
+        return query
+
 
     def update_user(self, user_id: int, **kwargs) -> None:
         """
@@ -67,13 +76,10 @@ class DB:
         Returns:
             None
         """
-        try:
-            user = self.find_user_by(id=user_id)
-            for key, value in kwargs.items():
-                if hasattr(user, key):
-                    setattr(user, key, value)
-                else:
-                    raise InvalidRequestError
-            self._session.commit()
-        except (NoResultFound, InvalidRequestError, ValueError):
-            raise ValueError
+        user = self.find_user_by(id=user_id)
+        for k in kwargs.keys():
+            if k not in User.__table__.columns.keys():
+                raise ValueError
+        for k, v in kwargs.items():
+            setattr(user, k, v)
+        self._session.commit()
