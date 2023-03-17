@@ -58,15 +58,13 @@ class Auth:
         Returns:
             bool: True if the login is valid, False otherwise.
         """
-        if not email or not password:
-            return False
         try:
-            users_found = self._db.find_user_by(email=email)
-            hashed_password = users_found.hashed_password
-            return checkpw(password.encode(),
-                           hashed_password.encode('utf-8'))
-        except (NoResultFound, InvalidRequestError):
+            user = self._db.find_user_by(email=email)
+        except NoResultFound:
             return False
+        else:
+            return bcrypt.checkpw(password=password.encode(),
+                                  hashed_password=user.hashed_password)
 
     def create_session(self, email: str) -> Union[str, None]:
         """

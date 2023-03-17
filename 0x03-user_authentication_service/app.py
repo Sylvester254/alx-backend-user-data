@@ -46,13 +46,23 @@ def login() -> str:
     Return:
         - The account login payload.
     """
-    email, password = request.form.get("email"), request.form.get("password")
-    if not AUTH.valid_login(email, password):
-        abort(401)
-    session_id = AUTH.create_session(email)
-    response = jsonify({"email": email, "message": "logged in"})
-    response.set_cookie("session_id", session_id)
-    return response
+    form_data = request.form
+    if "email" not in form_data:
+        return jsonify({"message": "email required"}), 400
+    elif "password" not in form_data:
+        return jsonify({"message": "password required"}), 400
+    else:
+        email = request.form.get("email")
+        password = request.form.get("password")
+        if AUTH.valid_login(email, password) is False:
+            abort(401)
+        else:
+            session_id = AUTH.create_session(email)
+            response = jsonify({
+                "email": email,
+                "message": "logged in"})
+            response.set_cookie('session_id', session_id)
+            return response
 
 
 @app.route("/sessions", methods=["DELETE"], strict_slashes=False)
@@ -61,12 +71,12 @@ def logout() -> str:
     Return:
         - Redirects to home route.
     """
-    session_id = request.cookies.get("session_id")
+    session_id = request.cookies.get('session_id')
     user = AUTH.get_user_from_session_id(session_id)
-    if user is None:
+    if not user:
         abort(403)
     AUTH.destroy_session(user.id)
-    return redirect("/")
+    return redirect('/')
 
 
 @app.route("/profile", methods=["GET"], strict_slashes=False)
